@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Quaternion Visualizer</title>
+<meta charset="utf-8">
+<meta name="color-scheme" content="dark">
+<style type="text/css">
+canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+}
+form {
+  position: absolute;
+  z-index: 1;
+  color: #0ff;
+  white-space: pre;
+}
+input {
+  color: #0ff;
+}
+</style>
+</head>
+<body>
+<form id="quaternion_form">
+  Real componenet:
+  <input type="number" min="-1" step="0.01" max="1" name="real" value="1"></input>
+  Vector component:
+  <input type="number" min="-1" step="0.01" max="1" name="i" value="0"></input>  i
+  <input type="number" min="-1" step="0.01" max="1" name="j" value="0"></input>  j
+  <input type="number" min="-1" step="0.01" max="1" name="k" value="0"></input>  k
+  Magnitude: <text id="quaternion_magnitude">1</text>
+</form>
+</body>
+<script src="EventEmitter.min.js"></script>
+<script src="three.js"></script>
+<script src="three.Densaugeo.js"></script>
+<script>
+const f3D = THREE.Densaugeo.forgeObject3D
+
+class LineGeometry extends THREE.BufferGeometry {
+  constructor(length=1) {
+    super()
+    this.type = 'LineGeometry'
+    this.parameters = { length: length }
+    this.setAttribute('position', new THREE.Float32BufferAttribute([
+       0, -length/2, 0,
+       0,  length/2, 0,
+    ], 3))
+  }
+}
+
+const camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 100 )
+
+camera.matrix.compose(
+  new THREE.Vector3(8, 8, 5),
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(0.3*Math.PI, 0, 0.75*Math.PI, 'ZYX')),
+  new THREE.Vector3(1, 1, 1)
+)
+const scene = new THREE.Scene()
+
+const quaternion_tester = f3D(THREE.Group, {}, [
+  f3D(THREE.Mesh, {
+    geometry: new THREE.CylinderGeometry(0.1, 0.1, 4.5),
+    material: new THREE.MeshPhongMaterial({ color: 0x00ffff }),
+    position: [0, 0, -2.25],
+    euler: [-Math.PI/2, 0, 0],
+  }),
+  f3D(THREE.Mesh, {
+    geometry: new THREE.ConeGeometry(0.2, 1, 8),
+    material: new THREE.MeshPhongMaterial({ color: 0x00ffff }),
+    position: [0, 0, -5],
+    euler: [-Math.PI/2, 0, 0],
+  }),
+  f3D(THREE.Mesh, {
+    geometry: new THREE.ConeGeometry(0.1, 1, 8),
+    material: new THREE.MeshPhongMaterial({ color: 0x00ffff }),
+    position: [0, 0.5, -4],
+  }),
+])
+scene.add(quaternion_tester)
+
+const axis_geometry = new LineGeometry(100)
+const axis_cone_geometry = new THREE.ConeGeometry(0.1, 1)
+
+const grid_points = new Float32Array(240)
+for(let i = 1; i <= 10; ++i) {
+  grid_points.set([
+    -10,  -i, 0,
+     10,  -i, 0,
+    -10,   i, 0,
+     10,   i, 0,
+     -i, -10, 0,
+     -i,  10, 0,
+      i, -10, 0,
+      i,  10, 0,
+  ], 24*(i - 1))
+}
+const grid_geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(grid_points, 3))
+
+const grid = f3D(THREE.Group, {}, [
+  f3D(THREE.Line, {
+    geometry: axis_geometry,
+    material: new THREE.LineBasicMaterial({ color: 0xff0000 }),
+    euler: [0, 0, -Math.PI/2],
+  }),
+  f3D(THREE.Mesh, {
+    geometry: axis_cone_geometry,
+    material: new THREE.MeshPhongMaterial({ color: 0xff0000 }),
+    position: [5, 0, 0],
+    euler: [0, 0, -Math.PI/2],
+  }),
+  f3D(THREE.Line, {
+    geometry: axis_geometry,
+    material: new THREE.LineBasicMaterial({ color: 0x00ff00 }),
+  }),
+  f3D(THREE.Mesh, {
+    geometry: axis_cone_geometry,
+    material: new THREE.MeshPhongMaterial({ color: 0x00ff00 }),
+    position: [0, 5, 0],
+  }),
+  f3D(THREE.Line, {
+    geometry: axis_geometry,
+    material: new THREE.LineBasicMaterial({ color: 0x0000ff }),
+    euler: [Math.PI/2, 0, 0],
+  }),
+  f3D(THREE.Mesh, {
+    geometry: axis_cone_geometry,
+    material: new THREE.MeshPhongMaterial({ color: 0x0000ff }),
+    position: [0, 0, 5],
+    euler: [Math.PI/2, 0, 0],
+  }),
+  f3D(THREE.LineSegments, {
+    geometry: grid_geometry,
+    material: new THREE.LineBasicMaterial({ color: 0x808080 }),
+  }),
+])
+scene.add(grid)
+
+const ambient_light = f3D(THREE.AmbientLight, { color: new THREE.Color(0x404040) })
+scene.add(ambient_light);
+
+const directional_light = f3D(THREE.DirectionalLight, {
+  color: new THREE.Color(0x808080),
+  position: [1, 2, 5],
+})
+scene.add(directional_light);
+
+const renderer = new THREE.WebGLRenderer( { antialias: true } );
+renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.setAnimationLoop( animation );
+document.body.appendChild( renderer.domElement );
+
+var controls = new THREE.Densaugeo.FreeControls(camera, renderer.domElement, {panMouseSpeed: 0.05, dollySpeed: 5});
+
+function animation(time) {
+  renderer.render(scene, camera);
+}
+
+// WebGL occupies entire browser window
+window.addEventListener('resize', function() {
+  camera.aspect = window.innerWidth/window.innerHeight
+  camera.updateProjectionMatrix()
+  
+  renderer.setSize(window.innerWidth, window.innerHeight)
+})
+
+document.getElementById('quaternion_form').addEventListener('change', e => {
+  e.preventDefault()
+  
+  const form = document.getElementById('quaternion_form')
+  
+  document.getElementById('quaternion_magnitude').textContent = (form.real.value**2 + form.i.value**2 + form.j.value**2 + form.k.value**2)**0.5
+  
+  quaternion_tester.matrix.compose(
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Quaternion(Number(form.i.value), Number(form.j.value), Number(form.k.value), Number(form.real.value)),
+    new THREE.Vector3(1, 1, 1)
+  )
+  
+})
+
+document.getElementById('quaternion_form').addEventListener('keydown', e => e.stopPropagation())
+</script>
+</html>
