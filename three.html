@@ -34,12 +34,15 @@ input {
 </form>
 </body>
 <script src="EventEmitter.min.js"></script>
-<script src="three.js"></script>
-<script src="three.Densaugeo.js"></script>
-<script>
-const f3D = THREE.Densaugeo.forgeObject3D
+<script type="module">
+import * as THREE from './three.module.js'
+window.THREE = THREE
+import * as THREE_Densaugeo from './three.Densaugeo.js'
+window.THREE_Densaugeo = THREE_Densaugeo
 
-class LineGeometry extends THREE.BufferGeometry {
+window.f3D = THREE_Densaugeo.forgeObject3D
+
+window.LineGeometry = class LineGeometry extends THREE.BufferGeometry {
   constructor(length=1) {
     super()
     this.type = 'LineGeometry'
@@ -51,16 +54,16 @@ class LineGeometry extends THREE.BufferGeometry {
   }
 }
 
-const camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 100 )
+window.camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 100 )
 
 camera.matrix.compose(
   new THREE.Vector3(8, 8, 5),
   new THREE.Quaternion().setFromEuler(new THREE.Euler(0.3*Math.PI, 0, 0.75*Math.PI, 'ZYX')),
   new THREE.Vector3(1, 1, 1)
 )
-const scene = new THREE.Scene()
+window.scene = new THREE.Scene()
 
-const quaternion_tester = f3D(THREE.Group, {}, [
+window.quaternion_tester = f3D(THREE.Group, {}, [
   f3D(THREE.Mesh, {
     geometry: new THREE.CylinderGeometry(0.1, 0.1, 4.5),
     material: new THREE.MeshPhongMaterial({ color: 0x00ffff }),
@@ -81,10 +84,10 @@ const quaternion_tester = f3D(THREE.Group, {}, [
 ])
 scene.add(quaternion_tester)
 
-const axis_geometry = new LineGeometry(100)
-const axis_cone_geometry = new THREE.ConeGeometry(0.1, 1)
+window.axis_geometry = new LineGeometry(100)
+window.axis_cone_geometry = new THREE.ConeGeometry(0.1, 1)
 
-const grid_points = new Float32Array(240)
+window.grid_points = new Float32Array(240)
 for(let i = 1; i <= 10; ++i) {
   grid_points.set([
     -10,  -i, 0,
@@ -97,9 +100,9 @@ for(let i = 1; i <= 10; ++i) {
       i,  10, 0,
   ], 24*(i - 1))
 }
-const grid_geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(grid_points, 3))
+window.grid_geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(grid_points, 3))
 
-const grid = f3D(THREE.Group, {}, [
+window.grid = f3D(THREE.Group, {}, [
   f3D(THREE.Line, {
     geometry: axis_geometry,
     material: new THREE.LineBasicMaterial({ color: 0xff0000 }),
@@ -138,21 +141,21 @@ const grid = f3D(THREE.Group, {}, [
 ])
 scene.add(grid)
 
-const ambient_light = f3D(THREE.AmbientLight, { color: new THREE.Color(0x404040) })
+window.ambient_light = f3D(THREE.AmbientLight, { color: new THREE.Color(0x404040) })
 scene.add(ambient_light);
 
-const directional_light = f3D(THREE.DirectionalLight, {
+window.directional_light = f3D(THREE.DirectionalLight, {
   color: new THREE.Color(0x808080),
   position: [1, 2, 5],
 })
 scene.add(directional_light);
 
-const renderer = new THREE.WebGLRenderer( { antialias: true } );
+window.renderer = new THREE.WebGLRenderer( { antialias: true } );
 renderer.setSize( window.innerWidth, window.innerHeight );
 renderer.setAnimationLoop( animation );
 document.body.appendChild( renderer.domElement );
 
-var controls = new THREE.Densaugeo.FreeControls(camera, renderer.domElement, {panMouseSpeed: 0.05, dollySpeed: 5});
+window.controls = new THREE_Densaugeo.FreeControls(camera, renderer.domElement, {panMouseSpeed: 0.05, dollySpeed: 5});
 
 function animation(time) {
   renderer.render(scene, camera);

@@ -1,23 +1,19 @@
 /**
  * Dependencies: THREE.js
  */
-
-if(window.THREE == null) {
-  console.error('THREE.Densaugeo.js depends on THREE.js');
-}
-
-THREE.Densaugeo = {}
+import * as THREE from './three.module.js'
 
 // Chainable builder for THREE.Object3D stuff
 // Forces matrix use, because THREE.js .position and similar properties are flaky
 // Converts arrays to THREE.Vector3 or THREE.Euler for position, euler, and scale properties
 // f3D(THREE.Object3D, {position: [1, 2, 3]}, [child_one, child_two])
 // 'type' argument may be either a constructor or a clonable object
-THREE.Densaugeo.forgeObject3D = function forgeObject3D(type, properties, children) {
+export function forgeObject3D(type, properties, children) {
   var o3D = typeof type === 'function' ? new type() : type;
   
   if(properties.position instanceof Array) {
-    properties.position = new THREE.Vector3().fromArray(properties.position);
+    o3D.position.fromArray(properties.position);
+    delete properties.position;
   }
   
   if(properties.euler instanceof Array) {
@@ -25,7 +21,8 @@ THREE.Densaugeo.forgeObject3D = function forgeObject3D(type, properties, childre
   }
   
   if(properties.scale instanceof Array) {
-    properties.scale = new THREE.Vector3().fromArray(properties.scale);
+    o3D.scale.fromArray(properties.scale);
+    delete properties.scale;
   }
   
   for(var i in properties) {
@@ -43,7 +40,7 @@ THREE.Densaugeo.forgeObject3D = function forgeObject3D(type, properties, childre
     }
     
     // Since o3D's relevant properties are already overwritten from the properties argument, they can be used on their own
-    o3D.matrix.compose(properties.position || o3D.position, properties.quaternion || o3D.quaternion, properties.scale || o3D.scale);
+    o3D.matrix.compose(o3D.position, properties.quaternion || o3D.quaternion, o3D.scale);
   }
   
   o3D.matrixWorldNeedsUpdate = true;
@@ -61,21 +58,21 @@ THREE.Densaugeo.forgeObject3D = function forgeObject3D(type, properties, childre
 // forgeMesh.geometries.yourModel = someGeometry;
 // forgeMesh.materials.yourModel = someMaterial;
 // forgeMesh('yourModel', {position: [-5, 0, 5]}, [child_one, child_two]);
-THREE.Densaugeo.forgeMesh = function forgeMesh(modelName, properties, children) {
-  if(THREE.Densaugeo.forgeMesh.geometries[modelName] == null) {
-    throw new Error('No geometry in THREE.Densaugeo.forgeMesh.geometries for model name "' + modelName + '".');
+export function forgeMesh(modelName, properties, children) {
+  if(forgeMesh.geometries[modelName] == null) {
+    throw new Error('No geometry in THREE_Densaugeo.forgeMesh.geometries for model name "' + modelName + '".');
   }
-  if(THREE.Densaugeo.forgeMesh.materials [modelName] == null) {
-    throw new Error('No material in THREE.Densaugeo.forgeMesh.materials for model name "'  + modelName + '".');
+  if(forgeMesh.materials [modelName] == null) {
+    throw new Error('No material in THREE_Densaugeo.forgeMesh.materials for model name "'  + modelName + '".');
   }
   
-  properties.geometry = THREE.Densaugeo.forgeMesh.geometries[modelName];
-  properties.material = THREE.Densaugeo.forgeMesh.materials [modelName];
+  properties.geometry = forgeMesh.geometries[modelName];
+  properties.material = forgeMesh.materials [modelName];
   
-  return THREE.Densaugeo.forgeObject3D(THREE.Mesh, properties, children);
+  return forgeObject3D(THREE.Mesh, properties, children);
 }
-THREE.Densaugeo.forgeMesh.geometries = {};
-THREE.Densaugeo.forgeMesh.materials  = {};
+forgeMesh.geometries = {};
+forgeMesh.materials  = {};
 
 // meshMaker = new MeshMaker();
 // meshMaker.mesh = new THREE.Mesh(someGeometry, someMaterial);
@@ -101,7 +98,7 @@ THREE.Densaugeo.forgeMesh.materials  = {};
 // meshMaker.meshProperties.euler = new THREE.Euler(0, 0, 0);
 // meshMaker.meshProperties.foo = 'bar';
 // meshMaker.make();
-THREE.Densaugeo.MeshMaker = function() {
+export function MeshMaker() {
   this.meshProperties = {};
   
   this.mesh = undefined;
@@ -111,10 +108,10 @@ THREE.Densaugeo.MeshMaker = function() {
   this.forceMatrix = false;
 }
 
-THREE.Densaugeo.MeshMaker.prototype.make = function(args) {
+MeshMaker.prototype.make = function(args) {
   // To make a mesh, you must have a mesh. This mesh is assumed to be a THREE.Mesh
   var mesh = this.mesh.clone();
-  if(!(mesh instanceof THREE.Mesh)) throw new Error('THREE.Densaugeo.MeshMaker.mesh must be a THREE.Mesh');
+  if(!(mesh instanceof THREE.Mesh)) throw new Error('THREE_Densaugeo.MeshMaker.mesh must be a THREE.Mesh');
   
   // I don't make any assumptions about what addTo points at.  This will try to run anything with an 'add' function you want to give it
   if(this.addTo && typeof this.addTo.add === 'function') this.addTo.add(mesh);
@@ -169,17 +166,17 @@ THREE.Densaugeo.MeshMaker.prototype.make = function(args) {
 // A JSONLoader with a LoadAll method. LoadAll loads from an array of urls, then call the callback
 // with objects full of geometries and materials stored under their corresponding urls
 //
-// new THREE.Densaugeo.JSONMultiLoader.loadall(['url1', 'url2'], function(geometries, materialses) {
+// new JSONMultiLoader.loadall(['url1', 'url2'], function(geometries, materialses) {
 //   geometries.url1;        // Returns geometry for url1
 //   geometries['url2']      // Returns geometry for url2
 // }, '/myTextrurePath/');
-/*THREE.Densaugeo.JSONMultiLoader = function(showStatus) {
+/*export function JSONMultiLoader(showStatus) {
   THREE.JSONLoader.call(this, showStatus);
 }
 
-THREE.Densaugeo.JSONMultiLoader.prototype = Object.create(THREE.JSONLoader.prototype);
+JSONMultiLoader.prototype = Object.create(THREE.JSONLoader.prototype);
 
-THREE.Densaugeo.JSONMultiLoader.prototype.loadAll = function(urls, callback, texturePath) {
+JSONMultiLoader.prototype.loadAll = function(urls, callback, texturePath) {
   var count = urls.length;
   var geometries = {};
   var materialses = {};
@@ -355,11 +352,11 @@ THREE.Matrix4.prototype.forge = function(a) {
 // joystickRotSpeed      - Radians/ms per fraction displaced
 // joystickThrottleSpeed - Units/ms per fraction displaced
 
-THREE.Densaugeo.FreeControls = function(camera, domElement, options) {
+export function FreeControls(camera, domElement, options) {
   var self = this;
   
   if(domElement == null) {
-    throw new TypeError('Error in THREE.Densaugeo.FreeControls constructor: domElement must be supplied');
+    throw new TypeError('Error in THREE_Densaugeo.FreeControls constructor: domElement must be supplied');
   }
   
   for(var i in options) {
@@ -624,46 +621,44 @@ THREE.Densaugeo.FreeControls = function(camera, domElement, options) {
   }
   camLoop();
 }
-with({p: THREE.Densaugeo.FreeControls.prototype}) {
-  p.panKeySpeed = 0.01;
-  p.rotationKeySpeed = 0.001;
-  p.panMouseSpeed = 0.1;
-  p.rotationMouseSpeed = 0.002;
-  p.panTouchSpeed = 0.1;
-  p.rotatationTouchSpeed = 0.002;
-  p.rotationAccelSpeed = 1;
-  p.dollySpeed = 1;
-  p.touchThrottleSpeed = 0.0005;
-  p.joystickPanSpeed = 0.05;
-  p.joystickRotSpeed = 0.003;
-  p.joystickThrottleSpeed = 0.05;
-  p.keyTurnLeft = 37; // Left arrow
-  p.keyTurnRight = 39; // Right arrow
-  p.keyTurnUp = 38; // Up arrow
-  p.keyTurnDown = 40; // Down arrow
-  p.keyStrafeLeft = 65; // A
-  p.keyStrafeRight = 68; // D
-  p.keyStrafeUp = 69; // E
-  p.keyStrafeDown = 67; // C
-  p.keyForward = 87; // W
-  p.keyBackward = 83; // S
-}
+FreeControls.prototype.panKeySpeed = 0.01;
+FreeControls.prototype.rotationKeySpeed = 0.001;
+FreeControls.prototype.panMouseSpeed = 0.1;
+FreeControls.prototype.rotationMouseSpeed = 0.002;
+FreeControls.prototype.panTouchSpeed = 0.1;
+FreeControls.prototype.rotatationTouchSpeed = 0.002;
+FreeControls.prototype.rotationAccelSpeed = 1;
+FreeControls.prototype.dollySpeed = 1;
+FreeControls.prototype.touchThrottleSpeed = 0.0005;
+FreeControls.prototype.joystickPanSpeed = 0.05;
+FreeControls.prototype.joystickRotSpeed = 0.003;
+FreeControls.prototype.joystickThrottleSpeed = 0.05;
+FreeControls.prototype.keyTurnLeft = 37; // Left arrow
+FreeControls.prototype.keyTurnRight = 39; // Right arrow
+FreeControls.prototype.keyTurnUp = 38; // Up arrow
+FreeControls.prototype.keyTurnDown = 40; // Down arrow
+FreeControls.prototype.keyStrafeLeft = 65; // A
+FreeControls.prototype.keyStrafeRight = 68; // D
+FreeControls.prototype.keyStrafeUp = 69; // E
+FreeControls.prototype.keyStrafeDown = 67; // C
+FreeControls.prototype.keyForward = 87; // W
+FreeControls.prototype.keyBackward = 83; // S
 
 /**
- * @module THREE.Densaugeo.IntObject inherits THREE.Object3D
+ * @module THREE_Densaugeo.IntObject inherits THREE.Object3D
  * @description Clickable object for three.js scenes
  * 
- * @example var clickable = new THREE.Densaugeo.IntObject({name: 'Clickable'});
+ * @example var clickable = new THREE_Densaugeo.IntObject({name: 'Clickable'});
  * @example clickable.select.forge({sx: 4, sy: 4});
  * @example clickable.controls.Click = function() {alert('You clicked me!')}
  */
-THREE.Densaugeo.IntObject = function IntObject(options) {
+export function IntObject(options) {
   THREE.Object3D.call(this, options);
   
   // @prop Object controls -- An index of the functions to be controlled by a UI element
   this.controls = {};
   
-  // @prop THREE.Matrix4 select -- Matrix transform for visual indication object added by THREE.Densaugeo.Picker
+  // @prop THREE.Matrix4 select -- Matrix transform for visual indication object added by THREE_Densaugeo.Picker
   // @option THREE.Matrix4 select -- Sets .indicatorMatrix
   this.select = options && options.select || new THREE.Matrix4();
   
@@ -672,19 +667,19 @@ THREE.Densaugeo.IntObject = function IntObject(options) {
     this.name = options.name;
   }
 }
-THREE.Densaugeo.IntObject.prototype = Object.create(THREE.Object3D.prototype);
-THREE.Densaugeo.IntObject.prototype.constructor = THREE.Densaugeo.IntObject;
+IntObject.prototype = Object.create(THREE.Object3D.prototype);
+IntObject.prototype.constructor = IntObject;
 
 /**
- * @module THREE.Densaugeo.Picker inherites EventEmitter
+ * @module THREE_Densaugeo.Picker inherites EventEmitter
  * @description Allows selecting objects in a three.js scene by clicking on meshes
  * 
- * @example var picker = new THREE.Densaugeo.Picker();
+ * @example var picker = new THREE_Densaugeo.Picker();
  * @example someRenderer.domElement.addEventListener('click', picker.clickHandler);
  * @example picker.intObjects.push(someClickableObject);
  * @example picker.on('select', function(e) {console.log('Selected: ');console.log(e.target)});
  */
-THREE.Densaugeo.Picker = function Picker(options) {
+export function Picker(options) {
   EventEmitter.call(this, options);
   
   var self = this;
@@ -692,10 +687,10 @@ THREE.Densaugeo.Picker = function Picker(options) {
   // @prop THREE.WebGLRenderer renderer -- May be an empty object if not set
   this.renderer = {};
   
-  // @prop [THREE.Densaugeo.IntObject] intObjects -- Objects which can be picked (interacted with)
+  // @prop [THREE_Densaugeo.IntObject] intObjects -- Objects which can be picked (interacted with)
   this.intObjects = [];
   
-  // @prop THREE.Densaugeo.IntObject currentlySelected -- As the name suggests (undefined if no object is selected)
+  // @prop THREE_Densaugeo.IntObject currentlySelected -- As the name suggests (undefined if no object is selected)
   this.currentlySelected = undefined;
   
   // @prop THREE.Mesh indicator -- three.js object appended to selection to provide a visual cue
@@ -719,7 +714,7 @@ THREE.Densaugeo.Picker = function Picker(options) {
   var mouse = new THREE.Vector2();
   
   // @method undefined clickHandler(e) -- Handles click events; scans a three.js scene
-  // @event select {THREE.Densaugeo.IntObject target} -- Emitted when a target's child mesh has been clicked
+  // @event select {THREE_Densaugeo.IntObject target} -- Emitted when a target's child mesh has been clicked
   this.clickHandler = function(e) {
     e.preventDefault();
     
@@ -735,7 +730,7 @@ THREE.Densaugeo.Picker = function Picker(options) {
     if(intersections.length > 0) {
       var target = intersections[0].object;
       
-      while(!(target instanceof THREE.Densaugeo.IntObject)) {
+      while(!(target instanceof IntObject)) {
         target = target.parent;
       }
       
@@ -769,8 +764,8 @@ THREE.Densaugeo.Picker = function Picker(options) {
     renderer.domElement.addEventListener('touchstart', self.touchHandler);
   }
 }
-THREE.Densaugeo.Picker.prototype = Object.create(EventEmitter.prototype);
-THREE.Densaugeo.Picker.prototype.constructor = THREE.Densaugeo.Picker;
+Picker.prototype = Object.create(EventEmitter.prototype);
+Picker.prototype.constructor = Picker;
 
 /**
  * @module THREE.Raycaster
@@ -840,7 +835,7 @@ THREE.Color.prototype.toString = function() {
  * PsychMaterial      - Psychedelic shader
  * 
  * To create a material:
- * var yourMaterial = new THREE.Densaugeo.WaterMaterial(options);
+ * var yourMaterial = new THREE_Densaugeo.WaterMaterial(options);
  * 
  * Surface distortion on the WaterMaterial and motion on the PsychMaterial require adding this line to your render loop:
  * yourMaterial.tick(seconds_since_last_loop);
@@ -874,7 +869,7 @@ THREE.Color.prototype.toString = function() {
  * 
  * If you change any of the additional options after instantiation, changes will take effect after calling .updateUniforms()
  */
-THREE.Densaugeo.WaterMaterial = function(/*Object*/ options) {
+export function WaterMaterial(/*Object*/ options) {
   THREE.ShaderMaterial.call(this);
   
   this.type = 'WaterMaterial';
@@ -895,10 +890,10 @@ THREE.Densaugeo.WaterMaterial = function(/*Object*/ options) {
   this.setValues(options);
   this.updateUniforms();
 }
-THREE.Densaugeo.WaterMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
-THREE.Densaugeo.WaterMaterial.prototype.constructor = THREE.Densaugeo.WaterMaterial;
+WaterMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
+WaterMaterial.prototype.constructor = WaterMaterial;
 
-THREE.Densaugeo.WaterMaterial.prototype.updateUniforms = function(values) {
+WaterMaterial.prototype.updateUniforms = function(values) {
   this.uniforms.alpha.value = this.alpha;
   this.uniforms.sunDirection.value.copy(this.sunDirection).normalize();
   this.uniforms.ambient.value.fromColor(this.ambient);
@@ -906,7 +901,7 @@ THREE.Densaugeo.WaterMaterial.prototype.updateUniforms = function(values) {
   this.uniforms.specular.value.fromColor(this.specular);
 }
 
-THREE.Densaugeo.WaterMaterial.prototype.tick = function(seconds) {
+WaterMaterial.prototype.tick = function(seconds) {
   this.uniforms.time.value += seconds;
 }
 
@@ -970,7 +965,7 @@ THREE.ShaderLib.densWater = {
   ].join('\n'),
 }
 
-THREE.Densaugeo.CoordinateMaterial = function(/*Object*/ options) {
+export function CoordinateMaterial(/*Object*/ options) {
   THREE.ShaderMaterial.call(this);
   
   this.type = 'CoordinateMaterial';
@@ -989,10 +984,10 @@ THREE.Densaugeo.CoordinateMaterial = function(/*Object*/ options) {
   this.setValues(options);
   this.updateUniforms();
 }
-THREE.Densaugeo.CoordinateMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
-THREE.Densaugeo.CoordinateMaterial.prototype.constructor = THREE.Densaugeo.CoordinateMaterial;
+CoordinateMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
+CoordinateMaterial.prototype.constructor = CoordinateMaterial;
 
-THREE.Densaugeo.CoordinateMaterial.prototype.updateUniforms = function(values) {
+CoordinateMaterial.prototype.updateUniforms = function(values) {
   this.uniforms.local.value = this.local;
   this.uniforms.alpha.value = this.alpha;
   this.uniforms.showAxes   .value.copy(this.showAxes   );
@@ -1052,7 +1047,7 @@ THREE.ShaderLib.densCoordinate = {
   ].join('\n'),
 }
 
-THREE.Densaugeo.PositionMaterial = function(/*Object*/ options) {
+export function PositionMaterial(/*Object*/ options) {
   THREE.ShaderMaterial.call(this);
   
   this.type = 'PositionMaterial';
@@ -1067,10 +1062,10 @@ THREE.Densaugeo.PositionMaterial = function(/*Object*/ options) {
   this.setValues(options);
   this.updateUniforms();
 }
-THREE.Densaugeo.PositionMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
-THREE.Densaugeo.PositionMaterial.prototype.constructor = THREE.Densaugeo.PositionMaterial;
+PositionMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
+PositionMaterial.prototype.constructor = PositionMaterial;
 
-THREE.Densaugeo.PositionMaterial.prototype.updateUniforms = function(values) {
+PositionMaterial.prototype.updateUniforms = function(values) {
   this.uniforms.local.value = this.local;
   this.uniforms.alpha.value = this.alpha;
   this.uniforms.fadeDistance.value.copy(this.fadeDistance);
@@ -1097,7 +1092,7 @@ THREE.ShaderLib.densPosition = {
   ].join('\n'),
 }
 
-THREE.Densaugeo.NormalMaterial = function(/*Object*/ options) {
+export function NormalMaterial(/*Object*/ options) {
   THREE.ShaderMaterial.call(this);
   
   this.type = 'NormalMaterial';
@@ -1112,10 +1107,10 @@ THREE.Densaugeo.NormalMaterial = function(/*Object*/ options) {
   this.setValues(options);
   this.updateUniforms();
 }
-THREE.Densaugeo.NormalMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
-THREE.Densaugeo.NormalMaterial.prototype.constructor = THREE.Densaugeo.NormalMaterial;
+NormalMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
+NormalMaterial.prototype.constructor = NormalMaterial;
 
-THREE.Densaugeo.NormalMaterial.prototype.updateUniforms = function(values) {
+NormalMaterial.prototype.updateUniforms = function(values) {
   this.uniforms.local.value = this.local;
   this.uniforms.alpha.value = this.alpha;
   this.uniforms.mode .value = this.mode ;
@@ -1162,7 +1157,7 @@ THREE.ShaderLib.densNormal = {
   ].join('\n'),
 }
 
-THREE.Densaugeo.PsychMaterial = function(/*Object*/ options) {
+export function PsychMaterial(/*Object*/ options) {
   THREE.ShaderMaterial.call(this);
   
   this.type = 'PsychMaterial';
@@ -1178,17 +1173,17 @@ THREE.Densaugeo.PsychMaterial = function(/*Object*/ options) {
   this.setValues(options);
   this.updateUniforms();
 }
-THREE.Densaugeo.PsychMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
-THREE.Densaugeo.PsychMaterial.prototype.constructor = THREE.Densaugeo.PsychMaterial;
+PsychMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
+PsychMaterial.prototype.constructor = PsychMaterial;
 
-THREE.Densaugeo.PsychMaterial.prototype.updateUniforms = function(values) {
+PsychMaterial.prototype.updateUniforms = function(values) {
   this.uniforms.local.value = this.local;
   this.uniforms.alpha.value = this.alpha;
   this.uniforms.wavelength.value.copy(this.wavelength);
   this.uniforms.frequency .value.copy(this.frequency );
 }
 
-THREE.Densaugeo.PsychMaterial.prototype.tick = function(seconds) {
+PsychMaterial.prototype.tick = function(seconds) {
   this.uniforms.time.value += seconds;
 }
 
