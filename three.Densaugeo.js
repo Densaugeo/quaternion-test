@@ -464,7 +464,7 @@ export function FreeControls(camera, domElement, options) {
     if(e.touches.length === 0) {
       domElement.removeEventListener('touchmove', TouchHandler);
       domElement.removeEventListener('touchmove', touchThrottleHandler);
-      touchThrottle = rotationRateAlpha = rotationRateBeta = rotationRateGamma = 0;
+      touchThrottle = rotationRatePitch = rotationRateYaw = rotationRateRoll = 0;
       accelActive = false;
     }
   });
@@ -508,10 +508,20 @@ export function FreeControls(camera, domElement, options) {
   
   var accelHandler = function(e) {
     if(accelActive) {
+      var orientation = screen.orientation && screen.orientation.angle || window.orientation;
+      
       // Constant = Math.PI/180/1000
-      rotationRateAlpha = e.rotationRate.alpha*rotationRateConversion*self.rotationAccelSpeed;
-      rotationRateBeta  = e.rotationRate.beta *rotationRateConversion*self.rotationAccelSpeed;
-      rotationRateGamma = e.rotationRate.gamma*rotationRateConversion*self.rotationAccelSpeed;
+      if(orientation === 0) {
+        rotationRatePitch = -e.rotationRate.alpha*rotationRateConversion*self.rotationAccelSpeed;
+        rotationRateYaw   =  e.rotationRate.beta *rotationRateConversion*self.rotationAccelSpeed;
+      } else if(orientation === 90)  {
+        rotationRateYaw   =  e.rotationRate.alpha*rotationRateConversion*self.rotationAccelSpeed;
+        rotationRatePitch =  e.rotationRate.beta *rotationRateConversion*self.rotationAccelSpeed;
+      } else {
+        rotationRateYaw   = -e.rotationRate.alpha*rotationRateConversion*self.rotationAccelSpeed;
+        rotationRatePitch = -e.rotationRate.beta *rotationRateConversion*self.rotationAccelSpeed;
+      }
+      rotationRateRoll  = e.rotationRate.gamma*rotationRateConversion*self.rotationAccelSpeed;
     }
   }
   
@@ -541,7 +551,7 @@ export function FreeControls(camera, domElement, options) {
   var touchZeroPrevious;
   var touchOnePrevious;
   var throttleZero, touchThrottle = 0;
-  var rotationRateAlpha = 0, rotationRateBeta = 0, rotationRateGamma = 0, accelActive = false;
+  var rotationRatePitch = 0, rotationRateYaw = 0, rotationRateRoll = 0, accelActive = false;
   
   var timePrevious = Date.now();
   var time = 0;
@@ -602,16 +612,16 @@ export function FreeControls(camera, domElement, options) {
       camera.matrix.elements[14] += translateGlobalZ;
     }
     
-    if(rotateX || rotationRateBeta) {
-      camera.matrix.multiply(new THREE.Matrix4().makeRotationX(rotateX - time*rotationRateBeta));
+    if(rotateX || rotationRatePitch) {
+      camera.matrix.multiply(new THREE.Matrix4().makeRotationX(rotateX - time*rotationRatePitch));
     }
     
-    if(rotateY || rotationRateAlpha) {
-      camera.matrix.multiply(new THREE.Matrix4().makeRotationY(rotateY + time*rotationRateAlpha));
+    if(rotateY || rotationRateYaw) {
+      camera.matrix.multiply(new THREE.Matrix4().makeRotationY(rotateY + time*rotationRateYaw));
     }
     
-    if(rotateZ || rotationRateGamma) {
-      camera.matrix.multiply(new THREE.Matrix4().makeRotationZ(rotateZ + time*rotationRateGamma));
+    if(rotateZ || rotationRateRoll) {
+      camera.matrix.multiply(new THREE.Matrix4().makeRotationZ(rotateZ + time*rotationRateRoll));
     }
     
     if(rotateGlobalZ) {
